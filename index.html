@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理素质测评系统</title>
+    <!-- 1. 引入 Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --secondary: #6366f1;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+        }
+
+        * { box-sizing: border-box; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+        body { background-color: var(--bg-color); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        .progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #e5e7eb; z-index: 100; }
+        #progress-bar { height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); width: 0%; transition: width 0.3s ease; }
+        .quiz-container { width: 94%; max-width: 500px; }
+        .card { background: var(--card-bg); padding: 40px 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
+        
+        .slide-in { animation: slideIn 0.4s forwards; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        h2 { text-align: center; margin-bottom: 25px; color: var(--text-dark); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-light); }
+        .input-group input, .input-group select { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; outline: none; }
+        
+        .step-info { color: var(--primary); font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: block; }
+        .question-text { font-size: 1.25rem; font-weight: 600; line-height: 1.5; margin-bottom: 35px; min-height: 80px; }
+        
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn { background: #fdfdfd; border: 2px solid #f3f4f6; padding: 16px; border-radius: 14px; cursor: pointer; text-align: left; font-weight: 500; transition: all 0.2s; }
+        .option-btn:hover { border-color: var(--primary); background: #f5f7ff; }
+        
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .back-link { display: inline-block; margin-top: 25px; color: var(--text-light); font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+        .finish-screen { text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="progress-container"><div id="progress-bar"></div></div>
+
+    <div class="quiz-container">
+        <!-- 页面 1：信息登记 -->
+        <div id="start-card" class="card">
+            <h2>信息登记</h2>
+            <div class="input-group">
+                <label>学号</label>
+                <input type="text" id="stu-id" placeholder="请输入学号">
+            </div>
+            <div class="input-group">
+                <label>性别</label>
+                <select id="gender">
+                    <option value="">-- 请选择 --</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+            <button class="btn-main" onclick="validateStart()">进入问卷</button>
+        </div>
+
+        <!-- 页面 2：答题 -->
+        <div id="question-card" class="card" style="display: none;">
+            <span id="step-info" class="step-info">1 / 46</span>
+            <div id="q-text" class="question-text">加载中...</div>
+            <div class="options-list">
+                <button class="option-btn" onclick="nextStep(1)">完全不符</button>
+                <button class="option-btn" onclick="nextStep(2)">比较不符</button>
+                <button class="option-btn" onclick="nextStep(3)">中立/一般</button>
+                <button class="option-btn" onclick="nextStep(4)">比较符合</button>
+                <button class="option-btn" onclick="nextStep(5)">极其符合</button>
+            </div>
+            <span id="back-btn" class="back-link" onclick="goBack()">← 返回上一题</span>
+        </div>
+
+        <!-- 页面 3：完成 -->
+        <div id="finish-card" class="card finish-screen">
+            <div id="status-text">
+                <h2>正在同步数据...</h2>
+                <p>请稍候，不要关闭页面</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心配置 (请务必填写你的真实信息) ---
+        const SUPABASE_URL = 'https://pqnjxmxczexoueqqhito.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxbmp4bXhjemV4b3VlcXFoaXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODgxMjcsImV4cCI6MjA4OTU2NDEyN30.iJ-RAXujlUH5POfmJTIYJX8jMgiN7FR6QuzBh9AqicU';
+
+        // --- 初始化 (注意：这里使用 _supabase 避免变量冲突) ---
+        let _supabase;
+        try {
+            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log("Supabase 客户端连接成功");
+        } catch (e) {
+            console.error("Supabase 初始化失败，请检查 URL 和 Key:", e);
+        }
+
+        const questions = [
+            /* SAAS 1-16 */
+            "我对自己的外表感到满意（反向计分）", "我担心人们会因为我的外表而对我评价不高", "我担心我的外貌会让他人觉得我没有吸引力", "在社交场合，我担心人们会发现我外表上的缺陷", "我害怕别人看穿我隐藏的外貌缺点", "当遇到新朋友时，我担心他们觉得我长得不好看", "我担心我的外貌会影响我的社交关系", "由于对自己外表的不自信，我在社交中感到不自在", "我担心别人在背地里谈论我的长相", "当我在公共场合时，我总感觉别人在评价我的外貌", "我担心我的外貌达不到大众的审美标准", "我因为担心自己的外表而回避一些社交活动", "我担心他人会因为我的外貌而忽视我的能力", "在拍照或录像时，我对自己被记录的样子感到焦虑", "我担心我的外貌会让显得没有亲和力", "如果别人盯着我看，我会立刻担心是不是自己外貌出了问题",
+            /* SSI 1-30 */
+            "我不说话时，别人也能轻易从表情看出我的心情", "我常用生动的手势和表情加强谈话感染力", "别人常说我是一个情感外露的人", "我很擅长用眼神或微笑传递温暖", "我发现自己很难隐藏内心的喜悦之情", "我能迅速察觉到朋友是否在掩饰沮丧", "我总是能敏感捕捉到他人情绪变化", "看到别人尴尬时，我也感同身受", "我能轻易通过语调判断他人是否生气", "我很在意他人的非言语暗示", "即使我很生气，也能在他人面前保持冷静", "我擅长在需要时掩饰内心的负面感受", "我可以随意控制自己的面部表情", "在压力社交情境下，我能克制焦虑", "别人很难看穿我是否正在紧张", "在聚会上，我通常是主动发起对话的人", "我发现自己很容易向陌生人介绍自己", "在群体讨论中，我能流畅发表观点", "我很擅长讲笑话或分享有趣的故事", "我从不担心在公众面前说话会词穷", "我非常在意自己在不同场合的行为是否得体", "我经常在社交结束后反思刚才的言行", "我很关注社交礼仪、规矩和地位", "我很容易察觉社交中的潜规则", "我非常关注别人对我形象的反馈", "我可以轻松地与任何背景的人打成一片", "在不同场合中，我自如扮演不同角色", "我能很好地应对突发的社交尴尬", "我擅长调整言行以留下完美的初次印象", "在社交互动中，我通常能掌握话语权"
+        ];
+
+        let userInfo = { id: "", gender: "" };
+        let answers = [];
+        let currentIndex = 0;
+
+        // --- 函数定义 ---
+
+        // 1. 进入问卷
+        function validateStart() {
+            const idInput = document.getElementById('stu-id').value.trim();
+            const genderInput = document.getElementById('gender').value;
+
+            if (!idInput || !genderInput) {
+                alert("请先填写学号并选择性别！");
+                return;
+            }
+
+            userInfo.id = idInput;
+            userInfo.gender = genderInput;
+
+            document.getElementById('start-card').style.display = 'none';
+            document.getElementById('question-card').style.display = 'block';
+            updateUI();
+        }
+
+        // 2. 更新题目界面
+        function updateUI() {
+            const card = document.getElementById('question-card');
+            card.classList.remove('slide-in');
+            void card.offsetWidth; // 强制重绘触发动画
+            card.classList.add('slide-in');
+
+            document.getElementById('q-text').innerText = questions[currentIndex];
+            document.getElementById('step-info').innerText = `${currentIndex + 1} / ${questions.length}`;
+            document.getElementById('progress-bar').style.width = ((currentIndex / questions.length) * 100) + '%';
+            document.getElementById('back-btn').style.visibility = currentIndex > 0 ? 'visible' : 'hidden';
+        }
+
+        // 3. 下一题
+        async function nextStep(val) {
+            answers[currentIndex] = val;
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                updateUI();
+            } else {
+                // 全部答完
+                document.getElementById('progress-bar').style.width = '100%';
+                document.getElementById('question-card').style.display = 'none';
+                document.getElementById('finish-card').style.display = 'block';
+                await submitToCloud();
+            }
+        }
+
+        // 4. 返回上一题
+        function goBack() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateUI();
+            }
+        }
+
+        // 5. 提交到 Supabase
+        async function submitToCloud() {
+            const dataRow = {
+                student_id: userInfo.id,
+                gender: userInfo.gender
+            };
+
+            // 映射 SAAS 1-16
+            for (let i = 0; i < 16; i++) {
+                dataRow[`saas_${i + 1}`] = answers[i];
+            }
+            // 映射 SSI 1-30
+            for (let i = 0; i < 30; i++) {
+                dataRow[`ssi_${i + 1}`] = answers[16 + i];
+            }
+
+            try {
+                const { error } = await _supabase
+                    .from('survey_responses') // 必须与你在 Supabase 建的表名一致
+                    .insert([dataRow]);
+
+                if (error) throw error;
+
+                document.getElementById('status-text').innerHTML = `
+                    <h2 style="color: #10b981;">✓ 问卷已完成</h2>
+                    <p>数据已安全同步至云端。</p>
+                    <button class="btn-main" onclick="location.reload()">重新填写</button>
+                `;
+            } catch (err) {
+                console.error("提交失败:", err);
+                document.getElementById('status-text').innerHTML = `
+                    <h2 style="color: #ef4444;">提交失败</h2>
+                    <p>错误原因: ${err.message}</p>
+                    <button class="btn-main" onclick="submitToCloud()">重试提交</button>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
