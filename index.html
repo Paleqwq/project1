@@ -3,44 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>心理素质测评系统</title>
-    <!-- 1. 引入 Supabase SDK -->
+    <title>大五人格深度测评报告</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --primary: #4f46e5;
-            --secondary: #6366f1;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-        }
-
-        * { box-sizing: border-box; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-        body { background-color: var(--bg-color); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
-        .progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #e5e7eb; z-index: 100; }
-        #progress-bar { height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); width: 0%; transition: width 0.3s ease; }
-        .quiz-container { width: 94%; max-width: 500px; }
-        .card { background: var(--card-bg); padding: 40px 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
-        
-        .slide-in { animation: slideIn 0.4s forwards; }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        h2 { text-align: center; margin-bottom: 25px; color: var(--text-dark); }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-light); }
-        .input-group input, .input-group select { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; outline: none; }
-        
-        .step-info { color: var(--primary); font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: block; }
-        .question-text { font-size: 1.25rem; font-weight: 600; line-height: 1.5; margin-bottom: 35px; min-height: 80px; }
-        
-        .options-list { display: flex; flex-direction: column; gap: 12px; }
-        .option-btn { background: #fdfdfd; border: 2px solid #f3f4f6; padding: 16px; border-radius: 14px; cursor: pointer; text-align: left; font-weight: 500; transition: all 0.2s; }
-        .option-btn:hover { border-color: var(--primary); background: #f5f7ff; }
-        
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .back-link { display: inline-block; margin-top: 25px; color: var(--text-light); font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
-        .finish-screen { text-align: center; display: none; }
+        :root { --bg: #f4f7f6; --card: #ffffff; --primary: #4338ca; --secondary: #6366f1; --text: #1e293b; --light-text: #64748b; }
+        * { box-sizing: border-box; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        body { background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        .progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #e2e8f0; z-index: 1000; }
+        #progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 0.3s; }
+        .quiz-container { max-width: 800px; margin: 40px auto; }
+        .card { background: var(--card); padding: 40px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+        .question-text { font-size: 1.3rem; font-weight: 600; line-height: 1.6; margin-bottom: 35px; min-height: 80px; }
+        .options-list { display: grid; gap: 15px; }
+        .option-btn { background: #f8fafc; border: 2px solid #f1f5f9; padding: 18px; border-radius: 15px; cursor: pointer; text-align: left; font-size: 1rem; transition: 0.2s; }
+        .option-btn:hover { border-color: var(--primary); background: #f5f7ff; transform: translateY(-2px); }
+        .report-section { display: none; animation: slideUp 0.8s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .trait-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 40px; }
+        .trait-card { background: #fff; padding: 20px; border: 1px solid #edf2f7; border-radius: 16px; border-top: 5px solid var(--primary); }
+        .trait-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .bar-bg { background: #edf2f7; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+        .bar-fill { height: 100%; background: var(--primary); transition: width 1.5s ease-in-out; }
+        .analysis-box { background: #eef2ff; padding: 25px; border-radius: 18px; margin-top: 30px; border: 1px dashed var(--primary); }
+        .analysis-title { font-weight: bold; color: var(--primary); font-size: 1.1rem; margin-bottom: 10px; display: flex; align-items: center; }
+        .analysis-content { font-size: 0.95rem; line-height: 1.7; color: #374151; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 18px; border-radius: 14px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; margin-top: 20px; }
+        .input-box { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 8px; outline: none; transition: 0.2s; }
+        .input-box:focus { border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -48,164 +38,179 @@
     <div class="progress-container"><div id="progress-bar"></div></div>
 
     <div class="quiz-container">
-        <!-- 页面 1：信息登记 -->
+        <!-- 信息登记 -->
         <div id="start-card" class="card">
-            <h2>信息登记</h2>
-            <div class="input-group">
-                <label>学号</label>
-                <input type="text" id="stu-id" placeholder="请输入学号">
+            <h2>大五人格个性测评</h2>
+            <div style="margin-bottom:20px">
+                <label style="font-size:0.9rem; color:var(--light-text)">被试人姓名</label>
+                <input type="text" id="subj-name" class="input-box" placeholder="请输入真实姓名">
             </div>
-            <div class="input-group">
-                <label>性别</label>
-                <select id="gender">
-                    <option value="">-- 请选择 --</option>
-                    <option value="男">男</option>
-                    <option value="女">女</option>
+            <div style="margin-bottom:20px">
+                <label style="font-size:0.9rem; color:var(--light-text)">学号 / ID</label>
+                <input type="text" id="stu-id" class="input-box" placeholder="请输入您的学号">
+            </div>
+            <div style="margin-bottom:30px">
+                <label style="font-size:0.9rem; color:var(--light-text)">性别</label>
+                <select id="gender" class="input-box">
+                    <option value="">-- 请选择 --</option><option value="男">男</option><option value="女">女</option>
                 </select>
             </div>
-            <button class="btn-main" onclick="validateStart()">进入问卷</button>
+            <button class="btn-main" onclick="validateStart()">开始测评</button>
         </div>
 
-        <!-- 页面 2：答题 -->
+        <!-- 答题区 -->
         <div id="question-card" class="card" style="display: none;">
-            <span id="step-info" class="step-info">1 / 46</span>
+            <div style="color:var(--primary); font-size:0.85rem; font-weight:bold; margin-bottom:15px" id="step-info">1 / 60</div>
             <div id="q-text" class="question-text">加载中...</div>
             <div class="options-list">
-                <button class="option-btn" onclick="nextStep(1)">完全不符</button>
-                <button class="option-btn" onclick="nextStep(2)">比较不符</button>
-                <button class="option-btn" onclick="nextStep(3)">中立/一般</button>
-                <button class="option-btn" onclick="nextStep(4)">比较符合</button>
-                <button class="option-btn" onclick="nextStep(5)">极其符合</button>
+                <button class="option-btn" onclick="nextStep(1)">1. 完全不同意</button>
+                <button class="option-btn" onclick="nextStep(2)">2. 不太同意</button>
+                <button class="option-btn" onclick="nextStep(3)">3. 有些同意</button>
+                <button class="option-btn" onclick="nextStep(4)">4. 同意</button>
+                <button class="option-btn" onclick="nextStep(5)">5. 完全同意</button>
             </div>
-            <span id="back-btn" class="back-link" onclick="goBack()">← 返回上一题</span>
+            <div style="margin-top:25px; color:var(--light-text); font-size:0.85rem; cursor:pointer" onclick="goBack()">← 返回上一题</div>
         </div>
 
-        <!-- 页面 3：完成 -->
-        <div id="finish-card" class="card finish-screen">
-            <div id="status-text">
-                <h2>正在同步数据...</h2>
-                <p>请稍候，不要关闭页面</p>
+        <!-- 深度报告区 -->
+        <div id="report-view" class="report-section card">
+            <h2>测评深度解析报告</h2>
+            <p id="user-display" style="text-align:center; color:var(--light-text); margin-bottom:40px"></p>
+            
+            <div id="trait-results" class="trait-grid"></div>
+
+            <div class="analysis-box">
+                <div class="analysis-title">✨ 综合人格画像</div>
+                <div id="portrait-text" class="analysis-content">计算中...</div>
             </div>
+
+            <div class="analysis-box" style="background:#f0fdf4; border-color:#22c55e">
+                <div class="analysis-title" style="color:#15803d">🚀 针对性发展建议</div>
+                <div id="advice-text" class="analysis-content">计算中...</div>
+            </div>
+
+            <button class="btn-main" style="background:var(--light-text)" onclick="location.reload()">重新测评</button>
         </div>
     </div>
 
     <script>
-        // --- 核心配置 (请务必填写你的真实信息) ---
+        // --- 请替换为您自己的真实配置 ---
         const SUPABASE_URL = 'https://pqnjxmxczexoueqqhito.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxbmp4bXhjemV4b3VlcXFoaXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODgxMjcsImV4cCI6MjA4OTU2NDEyN30.iJ-RAXujlUH5POfmJTIYJX8jMgiN7FR6QuzBh9AqicU';
-
-        // --- 初始化 (注意：这里使用 _supabase 避免变量冲突) ---
+        
         let _supabase;
         try {
             _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log("Supabase 客户端连接成功");
-        } catch (e) {
-            console.error("Supabase 初始化失败，请检查 URL 和 Key:", e);
-        }
+        } catch(e) { console.error("初始化错误", e); }
 
-        const questions = [
-            /* SAAS 1-16 */
-            "我对自己的外表感到满意（反向计分）", "我担心人们会因为我的外表而对我评价不高", "我担心我的外貌会让他人觉得我没有吸引力", "在社交场合，我担心人们会发现我外表上的缺陷", "我害怕别人看穿我隐藏的外貌缺点", "当遇到新朋友时，我担心他们觉得我长得不好看", "我担心我的外貌会影响我的社交关系", "由于对自己外表的不自信，我在社交中感到不自在", "我担心别人在背地里谈论我的长相", "当我在公共场合时，我总感觉别人在评价我的外貌", "我担心我的外貌达不到大众的审美标准", "我因为担心自己的外表而回避一些社交活动", "我担心他人会因为我的外貌而忽视我的能力", "在拍照或录像时，我对自己被记录的样子感到焦虑", "我担心我的外貌会让显得没有亲和力", "如果别人盯着我看，我会立刻担心是不是自己外貌出了问题",
-            /* SSI 1-30 */
-            "我不说话时，别人也能轻易从表情看出我的心情", "我常用生动的手势和表情加强谈话感染力", "别人常说我是一个情感外露的人", "我很擅长用眼神或微笑传递温暖", "我发现自己很难隐藏内心的喜悦之情", "我能迅速察觉到朋友是否在掩饰沮丧", "我总是能敏感捕捉到他人情绪变化", "看到别人尴尬时，我也感同身受", "我能轻易通过语调判断他人是否生气", "我很在意他人的非言语暗示", "即使我很生气，也能在他人面前保持冷静", "我擅长在需要时掩饰内心的负面感受", "我可以随意控制自己的面部表情", "在压力社交情境下，我能克制焦虑", "别人很难看穿我是否正在紧张", "在聚会上，我通常是主动发起对话的人", "我发现自己很容易向陌生人介绍自己", "在群体讨论中，我能流畅发表观点", "我很擅长讲笑话或分享有趣的故事", "我从不担心在公众面前说话会词穷", "我非常在意自己在不同场合的行为是否得体", "我经常在社交结束后反思刚才的言行", "我很关注社交礼仪、规矩和地位", "我很容易察觉社交中的潜规则", "我非常关注别人对我形象的反馈", "我可以轻松地与任何背景的人打成一片", "在不同场合中，我自如扮演不同角色", "我能很好地应对突发的社交尴尬", "我擅长调整言行以留下完美的初次印象", "在社交互动中，我通常能掌握话语权"
-        ];
+        const questions = ["我无忧无虑","我喜欢周围人多","我不喜欢想入非非","我尽量对我所遇到的任何人以礼相待","我将自己的物品保持得干干净净且井井有条","我常常感到不如别人","我很容易大笑","我发现哲学争论很无聊","我经常同我的家人和同事争吵","我比较善于安排将事情按时做完","当我压力重重时，有时就会感到要身心崩溃","我并不认为自己的心情非常愉快","艺术和自然界的各种状态常激起我的好奇心","有人认为我自私且以自我为中心","我并不是一个做事很有条理的人","我很少感到孤独或愁闷","我的确喜欢与人交谈","我认为，让学生听一些有争议的演讲只会使他们迷惑不解或产生误导","我宁愿与他人合作，也不与他们竞争","我努力把分给我的任务尽心尽职地去做好","我经常感到紧张而且神经过敏","我喜欢付诸行动的过程","诗歌对我的影响很少或者根本没有什么影响","我常会怀疑别人的用意","我有明确的目标，并且按部就班地朝着它们努力","我有时感到自己毫无价值","我往往喜欢单独做事情","我经常品尝一些新的外来食品","我认为，如果你不防备，大多数人就会利用你","在静下来工作之前，我会浪费很多时间","我很少感到惧怕或焦虑不安","我常常感到自己精力充沛无比","我极少注意到不同的环境所引起的情绪或感觉上的变化","我认识的大多数人都喜欢我","我为达到自己的目标做不懈的努力","我常常为人们对待我的方式而感到气愤","我是一个快活、充满激情的人","某些音乐能够引发我无限的想象","有些人认为我冷漠无情且斤斤计较","一旦我开始从事某件事，我一定坚持把这件事情做完","一旦事情变糟，我常常会失去信心并且想放弃","我并不认为是一个乐观派人物","有时候当我在阅读诗歌或欣赏文艺作品时，我会激动不已","我这人任性，不轻易改变自己的态度","有时候，我不能做一个像我应该做到的那样可靠的人","我很少感到悲伤或沮丧","我的生活节奏很快","我对探索宇宙或人类的本质根本没有多大的兴趣","我一般情况下会周密思考并为他人着想","我是一个办事效率高并且总把自己的工作完成的人","我常常感到孤立无援，并且希望有其他人来解决我面临的问题","我是一个很活跃的人","我的求知欲望十分强烈","如果我不喜欢别人，我就会让他们知道","我从不感到自己做事有头绪","有时我感到难为情，以至于自己想躲起来","与其领导别人，不如走我自己的路","我很喜欢理论或抽象的概念","如果需要的话，我会利用别人来达到自己的目的","我力求使自己做的每一件事情精益求精"];
 
-        let userInfo = { id: "", gender: "" };
+        const scoring = {
+            N: { items: [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56], reverse: [1, 16, 31, 46], name: "神经质 (情绪不稳性)" },
+            E: { items: [2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57], reverse: [12, 27, 42, 57], name: "外向性" },
+            O: { items: [3, 8, 13, 18, 23, 28, 33, 38, 43, 48, 53, 58], reverse: [3, 8, 18, 23, 33, 48], name: "开放性" },
+            A: { items: [4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59], reverse: [9, 14, 24, 29, 39, 44, 54, 59], name: "宜人性" },
+            C: { items: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60], reverse: [15, 30, 45, 55], name: "尽责性" }
+        };
+
+        let userInfo = { id: "", name: "", gender: "" };
         let answers = [];
         let currentIndex = 0;
 
-        // --- 函数定义 ---
-
-        // 1. 进入问卷
         function validateStart() {
-            const idInput = document.getElementById('stu-id').value.trim();
-            const genderInput = document.getElementById('gender').value;
-
-            if (!idInput || !genderInput) {
-                alert("请先填写学号并选择性别！");
-                return;
-            }
-
-            userInfo.id = idInput;
-            userInfo.gender = genderInput;
-
-            document.getElementById('start-card').style.display = 'none';
-            document.getElementById('question-card').style.display = 'block';
+            const name = document.getElementById('subj-name').value.trim();
+            const id = document.getElementById('stu-id').value.trim();
+            const gen = document.getElementById('gender').value;
+            
+            if(!name || !id || !gen) return alert("请填写姓名、学号和性别");
+            
+            userInfo = { id, name, gender: gen };
+            document.getElementById('start-card').style.display='none';
+            document.getElementById('question-card').style.display='block';
             updateUI();
         }
 
-        // 2. 更新题目界面
         function updateUI() {
-            const card = document.getElementById('question-card');
-            card.classList.remove('slide-in');
-            void card.offsetWidth; // 强制重绘触发动画
-            card.classList.add('slide-in');
-
-            document.getElementById('q-text').innerText = questions[currentIndex];
-            document.getElementById('step-info').innerText = `${currentIndex + 1} / ${questions.length}`;
-            document.getElementById('progress-bar').style.width = ((currentIndex / questions.length) * 100) + '%';
-            document.getElementById('back-btn').style.visibility = currentIndex > 0 ? 'visible' : 'hidden';
+            document.getElementById('q-text').innerText = (currentIndex + 1) + ". " + questions[currentIndex];
+            document.getElementById('step-info').innerText = (currentIndex + 1) + " / 60";
+            document.getElementById('progress-bar').style.width = (currentIndex / 60 * 100) + "%";
+            window.scrollTo(0,0);
         }
 
-        // 3. 下一题
         async function nextStep(val) {
             answers[currentIndex] = val;
-            if (currentIndex < questions.length - 1) {
-                currentIndex++;
-                updateUI();
-            } else {
-                // 全部答完
-                document.getElementById('progress-bar').style.width = '100%';
-                document.getElementById('question-card').style.display = 'none';
-                document.getElementById('finish-card').style.display = 'block';
-                await submitToCloud();
-            }
+            if(currentIndex < 59) { currentIndex++; updateUI(); } 
+            else { await submitAndReport(); }
         }
 
-        // 4. 返回上一题
-        function goBack() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateUI();
-            }
-        }
+        function goBack() { if(currentIndex > 0) { currentIndex--; updateUI(); } }
 
-        // 5. 提交到 Supabase
-        async function submitToCloud() {
-            const dataRow = {
-                student_id: userInfo.id,
-                gender: userInfo.gender
+        async function submitAndReport() {
+            document.getElementById('question-card').style.display='none';
+            document.getElementById('report-view').style.display='block';
+            document.getElementById('user-display').innerText = `受测者：${userInfo.name} (${userInfo.id}) | 性别：${userInfo.gender}`;
+            
+            const scores = calculate();
+            render(scores);
+            generateAnalysis(scores);
+
+            const payload = { 
+                student_id: userInfo.id, 
+                subject_name: userInfo.name, // 对应 SQL 里的字段
+                gender: userInfo.gender 
             };
+            answers.forEach((v, i) => payload[`q${i+1}`] = v);
 
-            // 映射 SAAS 1-16
-            for (let i = 0; i < 16; i++) {
-                dataRow[`saas_${i + 1}`] = answers[i];
+            if(_supabase) {
+                const { error } = await _supabase.from('big_five_survey').insert([payload]);
+                if(error) console.error("上传错误:", error);
             }
-            // 映射 SSI 1-30
-            for (let i = 0; i < 30; i++) {
-                dataRow[`ssi_${i + 1}`] = answers[16 + i];
+        }
+
+        function calculate() {
+            let res = { N: 0, E: 0, O: 0, A: 0, C: 0 };
+            for(let k in scoring) {
+                scoring[k].items.forEach(num => {
+                    let s = answers[num-1];
+                    if(scoring[k].reverse.includes(num)) s = 6 - s;
+                    res[k] += s;
+                });
             }
+            return res;
+        }
 
-            try {
-                const { error } = await _supabase
-                    .from('survey_responses') // 必须与你在 Supabase 建的表名一致
-                    .insert([dataRow]);
-
-                if (error) throw error;
-
-                document.getElementById('status-text').innerHTML = `
-                    <h2 style="color: #10b981;">✓ 问卷已完成</h2>
-                    <p>数据已安全同步至云端。</p>
-                    <button class="btn-main" onclick="location.reload()">重新填写</button>
-                `;
-            } catch (err) {
-                console.error("提交失败:", err);
-                document.getElementById('status-text').innerHTML = `
-                    <h2 style="color: #ef4444;">提交失败</h2>
-                    <p>错误原因: ${err.message}</p>
-                    <button class="btn-main" onclick="submitToCloud()">重试提交</button>
-                `;
+        function render(scores) {
+            const container = document.getElementById('trait-results');
+            container.innerHTML = "";
+            for(let k in scores) {
+                const s = scores[k];
+                const p = ((s - 12) / 48 * 100).toFixed(0);
+                container.innerHTML += `
+                    <div class="trait-card">
+                        <div class="trait-info"><span>${scoring[k].name}</span><strong>${s} 分</strong></div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div>
+                    </div>`;
             }
+        }
+
+        function generateAnalysis(s) {
+            let portrait = "";
+            let advice = "";
+
+            if(s.E > 45 && s.A > 45) portrait += "你是一个典型的“社交核心”。你不仅充满能量，而且待人真诚友善，在团队中极具亲和力。";
+            else if(s.E < 30 && s.C > 45) portrait += "你展现出“低调实干家”的特征。你更倾向于独立思考，做事严谨踏实，是极其可靠的幕后支撑。";
+            else if(s.N > 45 && s.C > 45) portrait += "你具备“完美主义压力者”的特质。你对自己要求极高，这虽助你取得成就，但也让你经常处于焦虑和紧绷之中。";
+            else portrait += "你的性格表现较为平衡。你能够根据环境的变化灵活调整自己的社交状态和工作节奏。";
+
+            if(s.O > 45) portrait += " 此外，你拥有极强的好奇心和想象力，不愿墨守成规。";
+            if(s.N < 30) portrait += " 你极佳的心理弹性让你在危机面前能保持罕见的冷静。";
+
+            advice += `• <b>针对情绪管理：</b>${s.N > 40 ? "尝试练习冥想或正念，学会与不确定性共处，减少自我批判。" : "继续保持你的情绪稳定性，在团队面临波动时，你可以扮演‘压舱石’的角色。"}<br>`;
+            advice += `• <b>针对工作学习：</b>${s.C < 35 ? "你可能更适合创意类工作，但建议建立微小的清单习惯，避免细节遗漏。" : "警惕完美主义带来的职业倦怠，学会‘适可而止’是一门艺术。"}<br>`;
+            advice += `• <b>针对人际交往：</b>${s.A < 35 ? "在表达理性观点时，尝试增加一点同理心，这会让你的建议更容易被他人采纳。" : "你习惯迁就他人，建议在核心利益上勇敢表达自己的真实诉求。"}`;
+
+            document.getElementById('portrait-text').innerHTML = portrait;
+            document.getElementById('advice-text').innerHTML = advice;
         }
     </script>
 </body>
